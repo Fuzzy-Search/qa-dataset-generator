@@ -25,11 +25,10 @@ question_types = [ # Example
 
 
 def get_data(topics, question_types, data_size, api_key, max_tokens):
-
-    curr_iter = 0
+    
     data = []
 
-    while curr_iter < data_size: # How many data points we want to collect
+    for _ in range(data_size): # How many data points we want to collect
 
         question_type = random.choice(question_types)
         topic = random.choice(topics)
@@ -48,9 +47,9 @@ def get_data(topics, question_types, data_size, api_key, max_tokens):
                     “answer”
                     paragraph 3, paragraph 5"""
     
-        data.append(generate_response(api_key, prompt, max_tokens))
-        curr_iter += 1
-    return data # Save however we want
+        data.append(generate_response(api_key, prompt, max_tokens)) # Save however we want
+        
+    return data 
 
 def generate_response(api_key, prompt, max_tokens):
     openai.api_key = api_key
