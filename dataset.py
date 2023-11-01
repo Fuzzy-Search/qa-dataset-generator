@@ -49,7 +49,7 @@ def get_data(topics, question_types, data_size, api_key, max_tokens):
                     paragraph 3, paragraph 5"""
     
         data.append(generate_response(api_key, prompt, max_tokens))
-
+        curr_iter += 1
     return data # Save however we want
 
 def generate_response(api_key, prompt, max_tokens):
