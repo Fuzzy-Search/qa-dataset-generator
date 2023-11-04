@@ -1,5 +1,6 @@
 import openai
 import random
+import json
 
 topics = [ # Example
     "technology",
@@ -14,50 +15,66 @@ topics = [ # Example
     "sports"
 ]
 
-question_types = [ # Example
-    "factual",
-    "inferential",
-    "how-to",
-    "problem-solving",
-    "analytical",
-    "comparative"
+question_types = [
+    "a factual question seeking direct answers from the content",
+    "an inferential question that understands underlying themes or concepts beyond the direct content",
+    "an explanatory question providing detailed explanations for processes, events, or concepts",
+    "a comparative question noting similarities or differences between elements",
+    "an evaluative question asking for judgment based on standards or criteria",
+    "a procedural question explaining steps towards a goal or task",
+    "a problem-solving question identifying solutions to a presented problem",
+    "an analytical question breaking down information into parts for understanding and connection"
 ]
 
 
-def get_data(topics, question_types, data_size, api_key, max_tokens):
-    
-    data = []
-
-    for _ in range(data_size): # How many data points we want to collect
-
-        question_type = random.choice(question_types)
-        topic = random.choice(topics)
-
-        prompt = f"""generate 7 small paragraphs and replace “text” with information about {topic} for every paragraph . 
-                    Then generate a {question_type} question about 1 or more paragraph. Next, answer the question and reference paragraphs
-                    that were the most useful to answer the question.
-
-                    format:
-                    paragraph 1: “text”
-                    … 
-                    paragraph 7 :“text”
-
-                    “question”
-
-                    “answer”
-                    paragraph 3, paragraph 5"""
-    
-        data.append(generate_response(api_key, prompt, max_tokens)) # Save however we want
-        
-    return data 
-
-def generate_response(api_key, prompt, max_tokens):
+def generate_response(api_key, topic, questions_types, max_tokes):
+    """
+    Ask gpt to generate contents based on the selected topic and question-answer pairs based on selected types.
+    """
     openai.api_key = api_key
+    s_types = random.sample(question_types, 3)
     
-    response = openai.Completion.create(
-        engine="text-davinci-003",  # GPT-3.5 Turbo engine
-        prompt=prompt,
-        max_tokens=max_tokens  # Limit the response to certain num of tokens
+    # create the conversation, ask gpt to generate content
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a knowledgeable assistant asked to generate content on various topics, formulate relevant questions based on that content, and then answer those questions by explicitly quoting from generated paragraphs."
+            },
+            {
+                "role": "user", 
+                "content": f"Generate 7 paragraphs about {topic}."
+            },
+            {
+                "role": "user", 
+                "content": f"Next, create {s_types[0]} and answer it. Reference the relevant paragraphs in your response using the following format: 'Question: ... Answer: ...(referencing Paragraphs #).'"
+            },
+            {
+                "role": "user",
+                "content": f"Now, create {s_types[1]} and answer it, in the same way & format as before."
+            },
+            {
+                "role": "user",
+                "content": f"Now, create {s_types[2]} and answer it, in the same way & format as before."
+            }
+        ],
+        max_tokens=max_tokens
     )
+    
+    # Extract the content from the response object
+    return response
 
-    return response.choices[0].text.strip()
+
+def format_response(result):
+    """
+    Extract and format gpt generated contents into more readable format.
+    """
+    response_dict = result.to_dict()
+    # Convert the dict to a JSON string if we want to print it or save it as JSON (optional).
+    json_string = json.dumps(response_dict, indent=2)
+    response_data = json.loads(json_string)
+    content = response_data['choices'][0]['message']['content']
+    # Process the content to a more readable format.
+    formatted_content = '\n\n'.join(content.split('\\n\\n'))
+    return formatted_content
